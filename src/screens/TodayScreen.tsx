@@ -17,10 +17,9 @@ import { colors, colorForHabit, iconForHabit } from '../theme';
 
 type Props = {
   user: User;
-  onSignOut: () => void;
 };
 
-export default function TodayScreen({ user, onSignOut }: Props) {
+export default function TodayScreen({ user }: Props) {
   const [selectedDate, setSelectedDate] = useState(todayISODate());
   const [habits, setHabits] = useState<HabitState>({});
   const [loading, setLoading] = useState(true);
@@ -57,13 +56,8 @@ export default function TodayScreen({ user, onSignOut }: Props) {
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Hi, {displayName}</Text>
-            <Text style={styles.subGreeting}>Let's build some habits today</Text>
-          </View>
-          <Pressable onPress={onSignOut} hitSlop={12}>
-            <Text style={styles.signOut}>Sign out</Text>
-          </Pressable>
+          <Text style={styles.greeting}>Hi, {displayName}</Text>
+          <Text style={styles.subGreeting}>Let's build some habits today</Text>
         </View>
 
         <View style={styles.dayStrip}>
@@ -149,9 +143,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
     marginBottom: 24,
   },
   greeting: {
@@ -162,12 +153,6 @@ const styles = StyleSheet.create({
   subGreeting: {
     fontSize: 14,
     color: colors.textSecondary,
-    marginTop: 4,
-  },
-  signOut: {
-    color: colors.primary,
-    fontSize: 14,
-    fontWeight: '600',
     marginTop: 4,
   },
   dayStrip: {

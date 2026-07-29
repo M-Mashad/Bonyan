@@ -2,11 +2,12 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { colors } from '../theme';
 
-export type TabKey = 'today' | 'progress';
+export type TabKey = 'today' | 'progress' | 'profile';
 
 const TABS: { key: TabKey; label: string; icon: string; iconActive: string }[] = [
   { key: 'today', label: 'Today', icon: 'checkmark-circle-outline', iconActive: 'checkmark-circle' },
   { key: 'progress', label: 'Progress', icon: 'stats-chart-outline', iconActive: 'stats-chart' },
+  { key: 'profile', label: 'Profile', icon: 'person-circle-outline', iconActive: 'person-circle' },
 ];
 
 type Props = {

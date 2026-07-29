@@ -5,6 +5,7 @@ import { useAuth } from './src/useAuth';
 import LoginScreen from './src/screens/LoginScreen';
 import TodayScreen from './src/screens/TodayScreen';
 import ProgressScreen from './src/screens/ProgressScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
 import BottomTabs, { TabKey } from './src/components/BottomTabs';
 import { colors } from './src/theme';
 
@@ -32,11 +33,9 @@ export default function App() {
 
   return (
     <View style={styles.appContainer}>
-      {tab === 'today' ? (
-        <TodayScreen user={user} onSignOut={signOut} />
-      ) : (
-        <ProgressScreen user={user} />
-      )}
+      {tab === 'today' && <TodayScreen user={user} />}
+      {tab === 'progress' && <ProgressScreen user={user} />}
+      {tab === 'profile' && <ProfileScreen user={user} onSignOut={signOut} />}
       <BottomTabs active={tab} onChange={setTab} />
       <StatusBar style="dark" />
     </View>

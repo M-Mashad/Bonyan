@@ -1,10 +1,12 @@
 import { GroupLogEntry } from './firestore';
 import { addDays, todayISODate } from './dateUtils';
 
-export function computeGroupStreak(entries: GroupLogEntry[], rangeDays: number): number {
+// Consecutive days (ending today, or yesterday if today isn't done yet)
+// where at least one member completed this specific habit.
+export function computeHabitStreak(entries: GroupLogEntry[], habit: string, rangeDays: number): number {
   const activeDates = new Set<string>();
   entries.forEach((entry) => {
-    if (Object.values(entry.habits).some(Boolean)) activeDates.add(entry.date);
+    if (entry.habits[habit]) activeDates.add(entry.date);
   });
 
   const today = todayISODate();
@@ -22,15 +24,12 @@ export function computeGroupStreak(entries: GroupLogEntry[], rangeDays: number):
   return streak;
 }
 
-export type ActivityItem = { uid: string; date: string; habit: string; updatedAt: Date | null };
-
-export function buildActivityFeed(entries: GroupLogEntry[], limit: number): ActivityItem[] {
-  const items: ActivityItem[] = [];
+// How many distinct members completed this habit today.
+export function computeTodayParticipation(entries: GroupLogEntry[], habit: string): number {
+  const today = todayISODate();
+  const completed = new Set<string>();
   entries.forEach((entry) => {
-    Object.entries(entry.habits).forEach(([habit, checked]) => {
-      if (checked) items.push({ uid: entry.uid, date: entry.date, habit, updatedAt: entry.updatedAt });
-    });
+    if (entry.date === today && entry.habits[habit]) completed.add(entry.uid);
   });
-  items.sort((a, b) => (b.updatedAt?.getTime() ?? 0) - (a.updatedAt?.getTime() ?? 0));
-  return items.slice(0, limit);
+  return completed.size;
 }

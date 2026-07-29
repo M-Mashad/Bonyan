@@ -10,21 +10,13 @@ import {
 import { User } from 'firebase/auth';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
-import { FRIEND_ACCOUNTS, GROUP_LABELS } from '../config';
-import { fetchHabits, saveHabits, fetchGroupHabitLogs, HabitState } from '../firestore';
-import { computeGroupStreak, buildActivityFeed, ActivityItem } from '../group';
-import {
-  lastNDays,
-  weekdayShort,
-  dayNumber,
-  isToday,
-  todayISODate,
-  formatRelativeTime,
-} from '../dateUtils';
+import { FRIEND_ACCOUNTS } from '../config';
+import { fetchHabits, saveHabits, fetchGroupHabitLogs, GroupLogEntry, HabitState } from '../firestore';
+import { computeHabitStreak, computeTodayParticipation } from '../group';
+import { lastNDays, weekdayShort, dayNumber, isToday, todayISODate } from '../dateUtils';
 import { colors, colorForHabit, iconForHabit } from '../theme';
 
 const GROUP_HISTORY_DAYS = 60;
-const ACTIVITY_FEED_LIMIT = 10;
 
 type Props = {
   user: User;
@@ -37,8 +29,8 @@ export default function TodayScreen({ user }: Props) {
   const [savingHabit, setSavingHabit] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const [groupStreak, setGroupStreak] = useState<number | null>(null);
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [groupEntries, setGroupEntries] = useState<GroupLogEntry[] | null>(null);
+  const groupSize = FRIEND_ACCOUNTS.length;
 
   const displayName = FRIEND_ACCOUNTS.find((a) => a.email === user.email)?.name ?? user.email ?? '';
   const days = lastNDays(7);
@@ -53,16 +45,11 @@ export default function TodayScreen({ user }: Props) {
 
   useEffect(() => {
     fetchGroupHabitLogs(GROUP_HISTORY_DAYS)
-      .then((entries) => {
-        setGroupStreak(computeGroupStreak(entries, GROUP_HISTORY_DAYS));
-        setActivity(buildActivityFeed(entries, ACTIVITY_FEED_LIMIT));
-      })
+      .then(setGroupEntries)
       .catch(() => {
-        // Non-critical — the group banner/feed just stays hidden.
+        // Non-critical — the group section just stays hidden.
       });
   }, [selectedDate]);
-
-  const labelFor = (uid: string) => (uid === user.uid ? 'You' : GROUP_LABELS[uid] ?? 'A friend');
 
   const toggleHabit = async (habit: string) => {
     const next = { ...habits, [habit]: !habits[habit] };
@@ -86,20 +73,6 @@ export default function TodayScreen({ user }: Props) {
           <Text style={styles.greeting}>Hi, {displayName}</Text>
           <Text style={styles.subGreeting}>Let's build some habits today</Text>
         </View>
-
-        {groupStreak !== null && (
-          <View style={styles.groupStreakCard}>
-            <View style={styles.groupStreakIcon}>
-              <Ionicons name="flame" size={22} color="#fff" />
-            </View>
-            <View style={styles.groupStreakTextWrap}>
-              <Text style={styles.groupStreakValue}>
-                {groupStreak} {groupStreak === 1 ? 'day' : 'days'}
-              </Text>
-              <Text style={styles.groupStreakLabel}>Group streak</Text>
-            </View>
-          </View>
-        )}
 
         <View style={styles.dayStrip}>
           {days.map((date) => {
@@ -163,21 +136,70 @@ export default function TodayScreen({ user }: Props) {
 
         {error && <Text style={styles.error}>{error}</Text>}
 
-        {activity.length > 0 && (
-          <View style={styles.activitySection}>
-            <Text style={styles.sectionTitle}>Group activity</Text>
-            <View style={styles.activityList}>
-              {activity.map((item, i) => {
-                const palette = colorForHabit(item.habit, HABITS);
+        {groupEntries && (
+          <View style={styles.groupSection}>
+            <Text style={styles.sectionTitle}>Together, today</Text>
+            <View style={styles.groupList}>
+              {HABITS.map((habit) => {
+                const palette = colorForHabit(habit, HABITS);
+                const streak = computeHabitStreak(groupEntries, habit, GROUP_HISTORY_DAYS);
+                const doneCount = computeTodayParticipation(groupEntries, habit);
+                const everyone = doneCount === groupSize;
                 return (
-                  <View key={i} style={styles.activityRow}>
-                    <View style={[styles.activityIconBadge, { backgroundColor: palette.bg }]}>
-                      <Ionicons name={iconForHabit(item.habit) as any} size={16} color={palette.accent} />
+                  <View
+                    key={habit}
+                    style={[
+                      styles.groupCard,
+                      { backgroundColor: everyone ? palette.accent : palette.bg },
+                    ]}
+                  >
+                    <View style={styles.groupCardTop}>
+                      <View
+                        style={[
+                          styles.habitIconBadge,
+                          { backgroundColor: everyone ? 'rgba(255,255,255,0.25)' : '#fff' },
+                        ]}
+                      >
+                        <Ionicons
+                          name={iconForHabit(habit) as any}
+                          size={18}
+                          color={everyone ? '#fff' : palette.accent}
+                        />
+                      </View>
+                      <Text style={[styles.groupHabitLabel, everyone && styles.groupTextOnAccent]}>
+                        {habit}
+                      </Text>
+                      {streak > 0 && (
+                        <View style={styles.groupStreakBadge}>
+                          <Ionicons name="flame" size={13} color={everyone ? '#fff' : palette.accent} />
+                          <Text style={[styles.groupStreakText, everyone && styles.groupTextOnAccent]}>
+                            {streak}
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={styles.activityText}>
-                      <Text style={styles.activityLabel}>{labelFor(item.uid)}</Text> completed {item.habit}
+
+                    <Text style={[styles.groupParticipationText, everyone && styles.groupTextOnAccent]}>
+                      {everyone
+                        ? `Everyone completed ${habit} today 🎉`
+                        : `${doneCount} of ${groupSize} completed ${habit} today`}
                     </Text>
-                    <Text style={styles.activityTime}>{formatRelativeTime(item.updatedAt)}</Text>
+
+                    <View style={styles.dotsRow}>
+                      {Array.from({ length: groupSize }).map((_, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.dot,
+                            {
+                              backgroundColor:
+                                i < doneCount ? (everyone ? '#fff' : palette.accent) : 'transparent',
+                              borderColor: everyone ? 'rgba(255,255,255,0.6)' : palette.accent,
+                            },
+                          ]}
+                        />
+                      ))}
+                    </View>
                   </View>
                 );
               })}
@@ -217,36 +239,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 4,
-  },
-  groupStreakCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.primary,
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 20,
-  },
-  groupStreakIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 14,
-  },
-  groupStreakTextWrap: {
-    flex: 1,
-  },
-  groupStreakValue: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#fff',
-  },
-  groupStreakLabel: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 1,
   },
   dayStrip: {
     flexDirection: 'row',
@@ -332,36 +324,53 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: 'center',
   },
-  activitySection: {
+  groupSection: {
     marginTop: 32,
   },
-  activityList: {
-    gap: 2,
+  groupList: {
+    gap: 12,
   },
-  activityRow: {
+  groupCard: {
+    borderRadius: 18,
+    padding: 16,
+  },
+  groupCardTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    marginBottom: 10,
   },
-  activityIconBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  activityText: {
+  groupHabitLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.textPrimary,
   },
-  activityLabel: {
-    fontWeight: '700',
+  groupTextOnAccent: {
+    color: '#fff',
   },
-  activityTime: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginLeft: 8,
+  groupStreakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  groupStreakText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  groupParticipationText: {
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
+  dotsRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1.5,
   },
 });

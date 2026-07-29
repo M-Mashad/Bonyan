@@ -4,10 +4,11 @@ A tiny Expo app for a fixed group of friends to build Islamic habits
 together — Fajr, Qiyam, and whatever else you add. Each person signs in
 with a password-protected account and checks off habits for the day.
 Individual check-ins stay private (no one can read or write another
-account's day-by-day log), but the group as a whole sees a shared **group
-streak** and an anonymized **activity feed** ("Brother 2 completed Fajr")
-— enough to feel like a team effort without turning it into a leaderboard
-of names. The point is the deed, not who did it.
+account's day-by-day log), but for each habit the group sees a shared
+**streak** and **today's participation** ("3 of 5 completed Fajr today",
+with a full-house celebration when everyone has) — no names, no feed of
+who-did-what, just where the group stands together. The point is the
+deed, not who did it.
 
 Live at: **https://m-mashad.github.io/Bonyan/**
 
@@ -19,12 +20,12 @@ Live at: **https://m-mashad.github.io/Bonyan/**
 - Checking/unchecking a habit writes straight to Firestore, under
   `users/<your account>/habitLogs/<date>`.
 - Firestore security rules let any signed-in member **read** everyone's
-  check-ins (needed to compute the group streak and activity feed), but
-  **write** only your own — no one can fake someone else's check-in.
-- Real names are never shown for anyone but yourself. Group-facing views
-  (the streak banner, the activity feed) label other members generically
-  ("Brother 1", "Brother 2", ...) via `GROUP_LABELS` in `src/config.ts` —
-  never cross-referenced to a name anywhere in the UI.
+  check-ins (needed to compute each habit's group streak and today's
+  participation count), but **write** only your own — no one can fake
+  someone else's check-in.
+- Group-facing numbers are always aggregates (streaks, counts) — the app
+  never shows or stores who specifically did or didn't complete a habit
+  anywhere in the UI, by name or otherwise.
 
 ## Setup (all from your phone, no code)
 
@@ -70,8 +71,7 @@ Live at: **https://m-mashad.github.io/Bonyan/**
    handle. Pick a password for each (tell each friend theirs, or use the
    Profile tab's "Change password" once signed in).
 3. Make sure the emails you use here exactly match `FRIEND_ACCOUNTS` in
-   `src/config.ts` (see step 6), and note each account's **User UID**
-   (shown in the Users table) — you'll need those for `GROUP_LABELS`.
+   `src/config.ts` (see step 6).
 
 ### 5. Register a Web app to get your config
 
@@ -82,10 +82,9 @@ Live at: **https://m-mashad.github.io/Bonyan/**
 4. You'll see a `firebaseConfig` object — send it to me (or paste it into
    `FIREBASE_CONFIG` in `src/config.ts` yourself).
 
-### 6. Set the friend list, group labels, and habits
+### 6. Set the friend list and habits
 
-- `src/config.ts` — `FRIEND_ACCOUNTS` (names + emails), `GROUP_LABELS`
-  (each account's UID mapped to an anonymous label like "Brother 3").
+- `src/config.ts` — `FRIEND_ACCOUNTS` (names + emails).
 - `src/habits.ts` — replace `HABITS` with your actual habit list.
 
 ## Running the app
@@ -113,9 +112,10 @@ phone's browser.
 - Each friend needs their password to sign in and check things off as
   themselves — no one can act as someone else through the app.
 - Firestore write rules restrict every account to its own `users/<uid>`
-  subtree. Read access is shared across signed-in members (needed for the
-  group streak/activity feed) — the app itself never displays another
-  member's real name, but the raw data is technically readable by any
+  subtree. Read access is shared across signed-in members (needed for
+  per-habit group streaks and participation counts) — the app itself
+  never displays who specifically did or didn't complete a habit, but
+  the raw per-account data is technically readable by any
   signed-in account, same trust level as everything else in this project.
 - There's no self-serve "forgot password" flow if the Profile tab isn't
   reachable. Reset it for them in Firebase console > Authentication >

@@ -30,6 +30,7 @@ export default function TodayScreen({ user }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const [groupEntries, setGroupEntries] = useState<GroupLogEntry[] | null>(null);
+  const [groupError, setGroupError] = useState<string | null>(null);
   const groupSize = FRIEND_ACCOUNTS.length;
 
   const displayName = FRIEND_ACCOUNTS.find((a) => a.email === user.email)?.name ?? user.email ?? '';
@@ -46,9 +47,7 @@ export default function TodayScreen({ user }: Props) {
   useEffect(() => {
     fetchGroupHabitLogs(GROUP_HISTORY_DAYS)
       .then(setGroupEntries)
-      .catch(() => {
-        // Non-critical — the group row just stays hidden.
-      });
+      .catch(() => setGroupError("Couldn't load the group's progress. Check back later."));
   }, [selectedDate]);
 
   const toggleHabit = async (habit: string) => {
@@ -174,6 +173,7 @@ export default function TodayScreen({ user }: Props) {
         )}
 
         {error && <Text style={styles.error}>{error}</Text>}
+        {groupError && <Text style={styles.groupError}>{groupError}</Text>}
       </ScrollView>
     </View>
   );
@@ -319,6 +319,12 @@ const styles = StyleSheet.create({
   error: {
     color: '#E0567C',
     marginTop: 16,
+    textAlign: 'center',
+  },
+  groupError: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    marginTop: 20,
     textAlign: 'center',
   },
 });

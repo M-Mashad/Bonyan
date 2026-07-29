@@ -1,12 +1,10 @@
-// Fill this in with the config object from your Firebase project.
-// Firebase console > Project settings > General > Your apps > Web app > SDK setup and configuration
 export const FIREBASE_CONFIG = {
-  apiKey: 'YOUR_API_KEY',
-  authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-  projectId: 'YOUR_PROJECT_ID',
-  storageBucket: 'YOUR_PROJECT_ID.appspot.com',
-  messagingSenderId: 'YOUR_SENDER_ID',
-  appId: 'YOUR_APP_ID',
+  apiKey: 'AIzaSyCDTupJTcsAp5ylEugEPiVu5S66sgp-58Q',
+  authDomain: 'bonyan-4c760.firebaseapp.com',
+  projectId: 'bonyan-4c760',
+  storageBucket: 'bonyan-4c760.firebasestorage.app',
+  messagingSenderId: '318225577448',
+  appId: '1:318225577448:web:231ea60cb28867ff6fa05d',
 };
 
 // The fixed list of friends. Each one needs a matching account created in

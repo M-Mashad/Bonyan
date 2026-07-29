@@ -1,6 +1,15 @@
 import { GroupLogEntry } from './firestore';
 import { addDays, todayISODate } from './dateUtils';
 
+// How many distinct members completed this habit on a given date.
+export function computeParticipationForDate(entries: GroupLogEntry[], habit: string, date: string): number {
+  const completed = new Set<string>();
+  entries.forEach((entry) => {
+    if (entry.date === date && entry.habits[habit]) completed.add(entry.uid);
+  });
+  return completed.size;
+}
+
 // Consecutive days (ending today, or yesterday if today isn't done yet)
 // where at least one member completed this specific habit.
 export function computeHabitStreak(entries: GroupLogEntry[], habit: string, rangeDays: number): number {
@@ -22,14 +31,4 @@ export function computeHabitStreak(entries: GroupLogEntry[], habit: string, rang
     else break;
   }
   return streak;
-}
-
-// How many distinct members completed this habit today.
-export function computeTodayParticipation(entries: GroupLogEntry[], habit: string): number {
-  const today = todayISODate();
-  const completed = new Set<string>();
-  entries.forEach((entry) => {
-    if (entry.date === today && entry.habits[habit]) completed.add(entry.uid);
-  });
-  return completed.size;
 }

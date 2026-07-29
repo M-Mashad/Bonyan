@@ -12,9 +12,11 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
 import { FRIEND_ACCOUNTS } from '../config';
 import { fetchHabits, saveHabits, fetchGroupHabitLogs, GroupLogEntry, HabitState } from '../firestore';
-import { computeTodayParticipation } from '../group';
+import { computeParticipationForDate } from '../group';
 import { lastNDays, weekdayShort, dayNumber, isToday, todayISODate } from '../dateUtils';
 import { colors, colorForHabit, iconForHabit } from '../theme';
+
+const DAY_STRIP_LENGTH = 7;
 
 type Props = {
   user: User;
@@ -32,7 +34,7 @@ export default function TodayScreen({ user }: Props) {
   const groupSize = FRIEND_ACCOUNTS.length;
 
   const displayName = FRIEND_ACCOUNTS.find((a) => a.email === user.email)?.name ?? user.email ?? '';
-  const days = lastNDays(7);
+  const days = lastNDays(DAY_STRIP_LENGTH);
 
   useEffect(() => {
     setLoading(true);
@@ -43,11 +45,12 @@ export default function TodayScreen({ user }: Props) {
   }, [user.uid, selectedDate]);
 
   useEffect(() => {
-    // Only today's check-ins are needed here — streaks live on the Progress tab.
-    fetchGroupHabitLogs(1)
+    // Covers the whole day-strip range so participation is correct for any
+    // selected day, not just today — streaks live on the Progress tab.
+    fetchGroupHabitLogs(DAY_STRIP_LENGTH)
       .then(setGroupEntries)
       .catch(() => setGroupError("Couldn't load the group's progress. Check back later."));
-  }, [selectedDate]);
+  }, []);
 
   const toggleHabit = async (habit: string) => {
     const next = { ...habits, [habit]: !habits[habit] };
@@ -103,7 +106,9 @@ export default function TodayScreen({ user }: Props) {
               const checked = !!habits[habit];
               const palette = colorForHabit(habit, HABITS);
 
-              const doneCount = groupEntries ? computeTodayParticipation(groupEntries, habit) : 0;
+              const doneCount = groupEntries
+                ? computeParticipationForDate(groupEntries, habit, selectedDate)
+                : 0;
               const everyone = !!groupEntries && doneCount === groupSize;
 
               return (
@@ -138,8 +143,8 @@ export default function TodayScreen({ user }: Props) {
                     <>
                       <Text style={styles.participationText}>
                         {everyone
-                          ? `Everyone completed ${habit} today 🎉`
-                          : `${doneCount} of ${groupSize} completed ${habit} today`}
+                          ? `Everyone completed ${habit} 🎉`
+                          : `${doneCount} of ${groupSize} completed ${habit}`}
                       </Text>
                       <View style={styles.dotsRow}>
                         {Array.from({ length: groupSize }).map((_, i) => (

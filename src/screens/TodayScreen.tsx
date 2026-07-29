@@ -8,11 +8,12 @@ import {
   View,
 } from 'react-native';
 import { User } from 'firebase/auth';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
 import { FRIEND_ACCOUNTS } from '../config';
 import { fetchHabits, saveHabits, HabitState } from '../firestore';
 import { lastNDays, weekdayShort, dayNumber, isToday, todayISODate } from '../dateUtils';
-import { colors, colorForHabit, emojiForHabit } from '../theme';
+import { colors, colorForHabit, iconForHabit } from '../theme';
 
 type Props = {
   user: User;
@@ -57,7 +58,7 @@ export default function TodayScreen({ user, onSignOut }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.greeting}>Hi, {displayName} 👋</Text>
+            <Text style={styles.greeting}>Hi, {displayName}</Text>
             <Text style={styles.subGreeting}>Let's build some habits today</Text>
           </View>
           <Pressable onPress={onSignOut} hitSlop={12}>
@@ -102,7 +103,9 @@ export default function TodayScreen({ user, onSignOut }: Props) {
                   onPress={() => toggleHabit(habit)}
                   disabled={savingHabit === habit}
                 >
-                  <Text style={styles.habitEmoji}>{emojiForHabit(habit)}</Text>
+                  <View style={[styles.habitIconBadge, { backgroundColor: '#fff' }]}>
+                    <Ionicons name={iconForHabit(habit) as any} size={20} color={palette.accent} />
+                  </View>
                   <Text style={styles.habitLabel}>{habit}</Text>
                   {savingHabit === habit ? (
                     <ActivityIndicator size="small" color={palette.accent} />
@@ -114,7 +117,7 @@ export default function TodayScreen({ user, onSignOut }: Props) {
                         checked && { backgroundColor: palette.accent },
                       ]}
                     >
-                      {checked && <Text style={styles.checkmark}>✓</Text>}
+                      {checked && <Ionicons name="checkmark" size={16} color="#fff" />}
                     </View>
                   )}
                 </Pressable>
@@ -224,8 +227,12 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 16,
   },
-  habitEmoji: {
-    fontSize: 22,
+  habitIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
   habitLabel: {
@@ -241,11 +248,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '800',
   },
   error: {
     color: '#E0567C',

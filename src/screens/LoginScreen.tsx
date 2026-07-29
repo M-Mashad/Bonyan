@@ -7,6 +7,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { FRIEND_ACCOUNTS } from '../config';
 import { colors } from '../theme';
 
@@ -24,7 +25,7 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
     return (
       <View style={styles.container}>
         <View style={styles.hero}>
-          <Text style={styles.heroEmoji}>🌱</Text>
+          <Ionicons name="leaf-outline" size={44} color={colors.primary} />
         </View>
         <Text style={styles.title}>Habit Tracker</Text>
         <Text style={styles.subtitle}>Who's checking in today?</Text>
@@ -40,7 +41,7 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
                 <Text style={styles.avatarText}>{account.name.charAt(0)}</Text>
               </View>
               <Text style={styles.nameText}>{account.name}</Text>
-              <Text style={styles.chevron}>›</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
             </Pressable>
           ))}
         </View>
@@ -51,7 +52,7 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.hero}>
-        <Text style={styles.heroEmoji}>👋</Text>
+        <Ionicons name="hand-left-outline" size={44} color={colors.primary} />
       </View>
       <Text style={styles.title}>Hi, {selected.name}</Text>
       <Text style={styles.subtitle}>Enter your password to continue</Text>
@@ -109,9 +110,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
-  heroEmoji: {
-    fontSize: 44,
-  },
   title: {
     fontSize: 26,
     fontWeight: '800',
@@ -162,10 +160,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: colors.textPrimary,
-  },
-  chevron: {
-    fontSize: 22,
-    color: colors.textSecondary,
   },
   input: {
     width: '100%',

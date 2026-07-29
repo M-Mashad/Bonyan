@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { User } from 'firebase/auth';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
 import { HabitState, fetchRecentHabitLogs } from '../firestore';
 import { computeStreaks } from '../streaks';
-import { colors, colorForHabit, emojiForHabit } from '../theme';
+import { colors, colorForHabit, iconForHabit } from '../theme';
 import {
   addMonths,
   buildMonthGrid,
@@ -61,7 +62,12 @@ export default function ProgressScreen({ user }: Props) {
                 ]}
                 onPress={() => setSelectedHabit(habit)}
               >
-                <Text style={styles.pillEmoji}>{emojiForHabit(habit)}</Text>
+                <Ionicons
+                  name={iconForHabit(habit) as any}
+                  size={16}
+                  color={isSelected ? '#fff' : habitPalette.accent}
+                  style={styles.pillIcon}
+                />
                 <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>{habit}</Text>
               </Pressable>
             );
@@ -78,14 +84,14 @@ export default function ProgressScreen({ user }: Props) {
                   onPress={() => setView((v) => addMonths(v.year, v.month, -1))}
                   hitSlop={10}
                 >
-                  <Text style={styles.navArrow}>‹</Text>
+                  <Ionicons name="chevron-back" size={22} color={colors.primary} />
                 </Pressable>
                 <Text style={styles.monthLabel}>{monthLabel(view.year, view.month)}</Text>
                 <Pressable
                   onPress={() => setView((v) => addMonths(v.year, v.month, 1))}
                   hitSlop={10}
                 >
-                  <Text style={styles.navArrow}>›</Text>
+                  <Ionicons name="chevron-forward" size={22} color={colors.primary} />
                 </Pressable>
               </View>
 
@@ -125,15 +131,17 @@ export default function ProgressScreen({ user }: Props) {
 
             <View style={styles.statsRow}>
               <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
+                <Ionicons name="flame" size={20} color={palette.accent} />
                 <Text style={styles.statLabel}>Current streak</Text>
                 <Text style={styles.statValue}>
-                  🔥 {streaks.current} {streaks.current === 1 ? 'day' : 'days'}
+                  {streaks.current} {streaks.current === 1 ? 'day' : 'days'}
                 </Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
+                <Ionicons name="trophy" size={20} color={palette.accent} />
                 <Text style={styles.statLabel}>Longest streak</Text>
                 <Text style={styles.statValue}>
-                  🏆 {streaks.longest} {streaks.longest === 1 ? 'day' : 'days'}
+                  {streaks.longest} {streaks.longest === 1 ? 'day' : 'days'}
                 </Text>
               </View>
             </View>
@@ -173,8 +181,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 10,
   },
-  pillEmoji: {
-    fontSize: 15,
+  pillIcon: {
     marginRight: 6,
   },
   pillText: {
@@ -199,12 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 14,
-  },
-  navArrow: {
-    fontSize: 24,
-    color: colors.primary,
-    fontWeight: '700',
-    paddingHorizontal: 8,
   },
   monthLabel: {
     fontSize: 16,
@@ -258,12 +259,12 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 18,
     padding: 16,
+    gap: 6,
   },
   statLabel: {
     fontSize: 13,
     color: colors.textSecondary,
     fontWeight: '600',
-    marginBottom: 6,
   },
   statValue: {
     fontSize: 18,

@@ -25,12 +25,13 @@ export function colorForHabit(habit: string, allHabits: string[]): { bg: string;
   return habitPalette[idx % habitPalette.length];
 }
 
-// A little personality per habit name, purely decorative — falls back to a generic mark.
-const habitEmoji: Record<string, string> = {
-  Fajr: '🌅',
-  Qiyam: '🌙',
+// A little personality per habit name — falls back to a generic mark.
+// Names are Ionicons glyphs (see @expo/vector-icons).
+const habitIcon: Record<string, string> = {
+  Fajr: 'sunny-outline',
+  Qiyam: 'moon-outline',
 };
 
-export function emojiForHabit(habit: string): string {
-  return habitEmoji[habit] ?? '✨';
+export function iconForHabit(habit: string): string {
+  return habitIcon[habit] ?? 'sparkles-outline';
 }

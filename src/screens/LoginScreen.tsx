@@ -27,7 +27,7 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
         <View style={styles.hero}>
           <Ionicons name="leaf-outline" size={44} color={colors.primary} />
         </View>
-        <Text style={styles.title}>Habit Tracker</Text>
+        <Text style={styles.title}>Bonyan</Text>
         <Text style={styles.subtitle}>Who's checking in today?</Text>
 
         <View style={styles.list}>

@@ -1,4 +1,5 @@
 import { GroupLogEntry } from './firestore';
+import { Streaks } from './streaks';
 import { addDays, todayISODate } from './dateUtils';
 
 // How many distinct members completed this habit on a given date.
@@ -10,9 +11,9 @@ export function computeParticipationForDate(entries: GroupLogEntry[], habit: str
   return completed.size;
 }
 
-// Consecutive days (ending today, or yesterday if today isn't done yet)
-// where at least one member completed this specific habit.
-export function computeHabitStreak(entries: GroupLogEntry[], habit: string, rangeDays: number): number {
+// Current + longest streaks of days where at least one member completed
+// this habit (current ends today, or yesterday if today isn't done yet).
+export function computeGroupStreaks(entries: GroupLogEntry[], habit: string, rangeDays: number): Streaks {
   const activeDates = new Set<string>();
   entries.forEach((entry) => {
     if (entry.habits[habit]) activeDates.add(entry.date);
@@ -25,10 +26,22 @@ export function computeHabitStreak(entries: GroupLogEntry[], habit: string, rang
   }
 
   const startIdx = checked[0] ? 0 : 1;
-  let streak = 0;
+  let current = 0;
   for (let i = startIdx; i < checked.length; i++) {
-    if (checked[i]) streak++;
+    if (checked[i]) current++;
     else break;
   }
-  return streak;
+
+  let longest = 0;
+  let run = 0;
+  for (let i = checked.length - 1; i >= 0; i--) {
+    if (checked[i]) {
+      run++;
+      longest = Math.max(longest, run);
+    } else {
+      run = 0;
+    }
+  }
+
+  return { current, longest };
 }

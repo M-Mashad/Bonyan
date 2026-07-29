@@ -5,7 +5,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
 import { HabitState, fetchRecentHabitLogs, fetchGroupHabitLogs, GroupLogEntry } from '../firestore';
 import { computeStreaks } from '../streaks';
-import { computeHabitStreak } from '../group';
+import { computeGroupStreaks } from '../group';
 import { colors, colorForHabit, iconForHabit } from '../theme';
 import {
   addMonths,
@@ -52,8 +52,8 @@ export default function ProgressScreen({ user }: Props) {
     () => computeStreaks(logs, selectedHabit, HISTORY_DAYS),
     [logs, selectedHabit]
   );
-  const groupStreak = useMemo(
-    () => (groupEntries ? computeHabitStreak(groupEntries, selectedHabit, GROUP_HISTORY_DAYS) : null),
+  const groupStreaks = useMemo(
+    () => (groupEntries ? computeGroupStreaks(groupEntries, selectedHabit, GROUP_HISTORY_DAYS) : null),
     [groupEntries, selectedHabit]
   );
   const weeks = useMemo(() => buildMonthGrid(view.year, view.month), [view]);
@@ -145,31 +145,45 @@ export default function ProgressScreen({ user }: Props) {
               ))}
             </View>
 
+            <Text style={styles.statsGroupLabel}>You</Text>
             <View style={styles.statsRow}>
               <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
                 <Ionicons name="flame" size={20} color={palette.accent} />
-                <Text style={styles.statLabel}>Your streak</Text>
+                <Text style={styles.statLabel}>Current streak</Text>
                 <Text style={styles.statValue}>
                   {streaks.current} {streaks.current === 1 ? 'day' : 'days'}
                 </Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
                 <Ionicons name="trophy" size={20} color={palette.accent} />
-                <Text style={styles.statLabel}>Your longest</Text>
+                <Text style={styles.statLabel}>Longest streak</Text>
                 <Text style={styles.statValue}>
                   {streaks.longest} {streaks.longest === 1 ? 'day' : 'days'}
                 </Text>
               </View>
-              {groupStreak !== null && (
-                <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
-                  <Ionicons name="people" size={20} color={palette.accent} />
-                  <Text style={styles.statLabel}>Group streak</Text>
-                  <Text style={styles.statValue}>
-                    {groupStreak} {groupStreak === 1 ? 'day' : 'days'}
-                  </Text>
-                </View>
-              )}
             </View>
+
+            {groupStreaks && (
+              <>
+                <Text style={styles.statsGroupLabel}>The group</Text>
+                <View style={styles.statsRow}>
+                  <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
+                    <Ionicons name="flame" size={20} color={palette.accent} />
+                    <Text style={styles.statLabel}>Current streak</Text>
+                    <Text style={styles.statValue}>
+                      {groupStreaks.current} {groupStreaks.current === 1 ? 'day' : 'days'}
+                    </Text>
+                  </View>
+                  <View style={[styles.statCard, { backgroundColor: palette.bg }]}>
+                    <Ionicons name="trophy" size={20} color={palette.accent} />
+                    <Text style={styles.statLabel}>Longest streak</Text>
+                    <Text style={styles.statValue}>
+                      {groupStreaks.longest} {groupStreaks.longest === 1 ? 'day' : 'days'}
+                    </Text>
+                  </View>
+                </View>
+              </>
+            )}
           </>
         )}
 
@@ -276,9 +290,16 @@ const styles = StyleSheet.create({
   dayCircleTextChecked: {
     color: '#fff',
   },
+  statsGroupLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    marginBottom: 10,
+  },
   statsRow: {
     flexDirection: 'row',
     gap: 12,
+    marginBottom: 20,
   },
   statCard: {
     flex: 1,

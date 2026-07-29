@@ -7,13 +7,13 @@ export const FIREBASE_CONFIG = {
   appId: '1:318225577448:web:231ea60cb28867ff6fa05d',
 };
 
-// The fixed list of friends. Each one needs a matching account created in
-// Firebase console > Authentication > Users (email + a password you set).
-// The email doesn't need to be real/reachable — it's just a login handle.
+// The fixed list of friends. Each one has a matching account created in
+// Firebase Authentication (email + password). The email isn't
+// real/reachable — it's just a login handle.
 export const FRIEND_ACCOUNTS: { name: string; email: string }[] = [
-  { name: 'Friend 1', email: 'friend1@bonyan.app' },
-  { name: 'Friend 2', email: 'friend2@bonyan.app' },
-  { name: 'Friend 3', email: 'friend3@bonyan.app' },
-  { name: 'Friend 4', email: 'friend4@bonyan.app' },
-  { name: 'Friend 5', email: 'friend5@bonyan.app' },
+  { name: 'Mo Omar', email: 'moomar@bonyan.app' },
+  { name: 'Asd', email: 'asd@bonyan.app' },
+  { name: 'Treka', email: 'treka@bonyan.app' },
+  { name: 'Shaddad', email: 'shaddad@bonyan.app' },
+  { name: 'Hassan', email: 'hassan@bonyan.app' },
 ];

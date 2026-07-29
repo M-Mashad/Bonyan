@@ -112,52 +112,41 @@ export default function TodayScreen({ user }: Props) {
               return (
                 <Pressable
                   key={habit}
-                  style={[styles.habitCard, { backgroundColor: everyone ? palette.accent : palette.bg }]}
+                  style={[styles.habitCard, { backgroundColor: palette.bg }]}
                   onPress={() => toggleHabit(habit)}
                   disabled={savingHabit === habit}
                 >
                   <View style={styles.habitCardTop}>
-                    <View
-                      style={[
-                        styles.habitIconBadge,
-                        { backgroundColor: everyone ? 'rgba(255,255,255,0.25)' : '#fff' },
-                      ]}
-                    >
-                      <Ionicons
-                        name={iconForHabit(habit) as any}
-                        size={20}
-                        color={everyone ? '#fff' : palette.accent}
-                      />
+                    <View style={[styles.habitIconBadge, { backgroundColor: '#fff' }]}>
+                      <Ionicons name={iconForHabit(habit) as any} size={20} color={palette.accent} />
                     </View>
-                    <Text style={[styles.habitLabel, everyone && styles.textOnAccent]}>{habit}</Text>
+                    <Text style={styles.habitLabel}>{habit}</Text>
 
                     {streak > 0 && (
                       <View style={styles.streakBadge}>
-                        <Ionicons name="flame" size={13} color={everyone ? '#fff' : palette.accent} />
-                        <Text style={[styles.streakText, everyone && styles.textOnAccent]}>{streak}</Text>
+                        <Ionicons name="flame" size={13} color={palette.accent} />
+                        <Text style={styles.streakText}>{streak}</Text>
                       </View>
                     )}
 
                     {savingHabit === habit ? (
-                      <ActivityIndicator size="small" color={everyone ? '#fff' : palette.accent} />
+                      <ActivityIndicator size="small" color={palette.accent} />
                     ) : (
                       <View
                         style={[
                           styles.checkCircle,
-                          { borderColor: everyone ? '#fff' : palette.accent },
-                          checked && { backgroundColor: everyone ? '#fff' : palette.accent },
+                          { borderColor: palette.accent },
+                          checked && { backgroundColor: palette.accent },
                         ]}
                       >
-                        {checked && (
-                          <Ionicons name="checkmark" size={16} color={everyone ? palette.accent : '#fff'} />
-                        )}
+                        {checked && <Ionicons name="checkmark" size={16} color="#fff" />}
                       </View>
                     )}
                   </View>
 
                   {groupEntries && (
                     <>
-                      <Text style={[styles.participationText, everyone && styles.textOnAccent]}>
+                      <Text style={styles.participationText}>
                         {everyone
                           ? `Everyone completed ${habit} today 🎉`
                           : `${doneCount} of ${groupSize} completed ${habit} today`}
@@ -169,9 +158,8 @@ export default function TodayScreen({ user }: Props) {
                             style={[
                               styles.dot,
                               {
-                                backgroundColor:
-                                  i < doneCount ? (everyone ? '#fff' : palette.accent) : 'transparent',
-                                borderColor: everyone ? 'rgba(255,255,255,0.6)' : palette.accent,
+                                backgroundColor: i < doneCount ? palette.accent : 'transparent',
+                                borderColor: palette.accent,
                               },
                             ]}
                           />
@@ -292,9 +280,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.textPrimary,
-  },
-  textOnAccent: {
-    color: '#fff',
   },
   streakBadge: {
     flexDirection: 'row',

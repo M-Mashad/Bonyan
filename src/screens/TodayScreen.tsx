@@ -12,11 +12,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
 import { FRIEND_ACCOUNTS } from '../config';
 import { fetchHabits, saveHabits, fetchGroupHabitLogs, GroupLogEntry, HabitState } from '../firestore';
-import { computeHabitStreak, computeTodayParticipation } from '../group';
+import { computeTodayParticipation } from '../group';
 import { lastNDays, weekdayShort, dayNumber, isToday, todayISODate } from '../dateUtils';
 import { colors, colorForHabit, iconForHabit } from '../theme';
-
-const GROUP_HISTORY_DAYS = 60;
 
 type Props = {
   user: User;
@@ -45,7 +43,8 @@ export default function TodayScreen({ user }: Props) {
   }, [user.uid, selectedDate]);
 
   useEffect(() => {
-    fetchGroupHabitLogs(GROUP_HISTORY_DAYS)
+    // Only today's check-ins are needed here — streaks live on the Progress tab.
+    fetchGroupHabitLogs(1)
       .then(setGroupEntries)
       .catch(() => setGroupError("Couldn't load the group's progress. Check back later."));
   }, [selectedDate]);
@@ -104,7 +103,6 @@ export default function TodayScreen({ user }: Props) {
               const checked = !!habits[habit];
               const palette = colorForHabit(habit, HABITS);
 
-              const streak = groupEntries ? computeHabitStreak(groupEntries, habit, GROUP_HISTORY_DAYS) : 0;
               const doneCount = groupEntries ? computeTodayParticipation(groupEntries, habit) : 0;
               const everyone = !!groupEntries && doneCount === groupSize;
 
@@ -120,13 +118,6 @@ export default function TodayScreen({ user }: Props) {
                       <Ionicons name={iconForHabit(habit) as any} size={20} color={palette.accent} />
                     </View>
                     <Text style={styles.habitLabel}>{habit}</Text>
-
-                    {streak > 0 && (
-                      <View style={styles.streakBadge}>
-                        <Ionicons name="flame" size={13} color={palette.accent} />
-                        <Text style={styles.streakText}>{streak}</Text>
-                      </View>
-                    )}
 
                     {savingHabit === habit ? (
                       <ActivityIndicator size="small" color={palette.accent} />
@@ -278,17 +269,6 @@ const styles = StyleSheet.create({
   habitLabel: {
     flex: 1,
     fontSize: 16,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  streakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginRight: 12,
-  },
-  streakText: {
-    fontSize: 13,
     fontWeight: '700',
     color: colors.textPrimary,
   },

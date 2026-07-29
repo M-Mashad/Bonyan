@@ -47,7 +47,7 @@ export default function TodayScreen({ user }: Props) {
     fetchGroupHabitLogs(GROUP_HISTORY_DAYS)
       .then(setGroupEntries)
       .catch(() => {
-        // Non-critical — the group section just stays hidden.
+        // Non-critical — the group row just stays hidden.
       });
   }, [selectedDate]);
 
@@ -104,29 +104,80 @@ export default function TodayScreen({ user }: Props) {
             {HABITS.map((habit) => {
               const checked = !!habits[habit];
               const palette = colorForHabit(habit, HABITS);
+
+              const streak = groupEntries ? computeHabitStreak(groupEntries, habit, GROUP_HISTORY_DAYS) : 0;
+              const doneCount = groupEntries ? computeTodayParticipation(groupEntries, habit) : 0;
+              const everyone = !!groupEntries && doneCount === groupSize;
+
               return (
                 <Pressable
                   key={habit}
-                  style={[styles.habitCard, { backgroundColor: palette.bg }]}
+                  style={[styles.habitCard, { backgroundColor: everyone ? palette.accent : palette.bg }]}
                   onPress={() => toggleHabit(habit)}
                   disabled={savingHabit === habit}
                 >
-                  <View style={[styles.habitIconBadge, { backgroundColor: '#fff' }]}>
-                    <Ionicons name={iconForHabit(habit) as any} size={20} color={palette.accent} />
-                  </View>
-                  <Text style={styles.habitLabel}>{habit}</Text>
-                  {savingHabit === habit ? (
-                    <ActivityIndicator size="small" color={palette.accent} />
-                  ) : (
+                  <View style={styles.habitCardTop}>
                     <View
                       style={[
-                        styles.checkCircle,
-                        { borderColor: palette.accent },
-                        checked && { backgroundColor: palette.accent },
+                        styles.habitIconBadge,
+                        { backgroundColor: everyone ? 'rgba(255,255,255,0.25)' : '#fff' },
                       ]}
                     >
-                      {checked && <Ionicons name="checkmark" size={16} color="#fff" />}
+                      <Ionicons
+                        name={iconForHabit(habit) as any}
+                        size={20}
+                        color={everyone ? '#fff' : palette.accent}
+                      />
                     </View>
+                    <Text style={[styles.habitLabel, everyone && styles.textOnAccent]}>{habit}</Text>
+
+                    {streak > 0 && (
+                      <View style={styles.streakBadge}>
+                        <Ionicons name="flame" size={13} color={everyone ? '#fff' : palette.accent} />
+                        <Text style={[styles.streakText, everyone && styles.textOnAccent]}>{streak}</Text>
+                      </View>
+                    )}
+
+                    {savingHabit === habit ? (
+                      <ActivityIndicator size="small" color={everyone ? '#fff' : palette.accent} />
+                    ) : (
+                      <View
+                        style={[
+                          styles.checkCircle,
+                          { borderColor: everyone ? '#fff' : palette.accent },
+                          checked && { backgroundColor: everyone ? '#fff' : palette.accent },
+                        ]}
+                      >
+                        {checked && (
+                          <Ionicons name="checkmark" size={16} color={everyone ? palette.accent : '#fff'} />
+                        )}
+                      </View>
+                    )}
+                  </View>
+
+                  {groupEntries && (
+                    <>
+                      <Text style={[styles.participationText, everyone && styles.textOnAccent]}>
+                        {everyone
+                          ? `Everyone completed ${habit} today 🎉`
+                          : `${doneCount} of ${groupSize} completed ${habit} today`}
+                      </Text>
+                      <View style={styles.dotsRow}>
+                        {Array.from({ length: groupSize }).map((_, i) => (
+                          <View
+                            key={i}
+                            style={[
+                              styles.dot,
+                              {
+                                backgroundColor:
+                                  i < doneCount ? (everyone ? '#fff' : palette.accent) : 'transparent',
+                                borderColor: everyone ? 'rgba(255,255,255,0.6)' : palette.accent,
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                    </>
                   )}
                 </Pressable>
               );
@@ -135,77 +186,6 @@ export default function TodayScreen({ user }: Props) {
         )}
 
         {error && <Text style={styles.error}>{error}</Text>}
-
-        {groupEntries && (
-          <View style={styles.groupSection}>
-            <Text style={styles.sectionTitle}>Together, today</Text>
-            <View style={styles.groupList}>
-              {HABITS.map((habit) => {
-                const palette = colorForHabit(habit, HABITS);
-                const streak = computeHabitStreak(groupEntries, habit, GROUP_HISTORY_DAYS);
-                const doneCount = computeTodayParticipation(groupEntries, habit);
-                const everyone = doneCount === groupSize;
-                return (
-                  <View
-                    key={habit}
-                    style={[
-                      styles.groupCard,
-                      { backgroundColor: everyone ? palette.accent : palette.bg },
-                    ]}
-                  >
-                    <View style={styles.groupCardTop}>
-                      <View
-                        style={[
-                          styles.habitIconBadge,
-                          { backgroundColor: everyone ? 'rgba(255,255,255,0.25)' : '#fff' },
-                        ]}
-                      >
-                        <Ionicons
-                          name={iconForHabit(habit) as any}
-                          size={18}
-                          color={everyone ? '#fff' : palette.accent}
-                        />
-                      </View>
-                      <Text style={[styles.groupHabitLabel, everyone && styles.groupTextOnAccent]}>
-                        {habit}
-                      </Text>
-                      {streak > 0 && (
-                        <View style={styles.groupStreakBadge}>
-                          <Ionicons name="flame" size={13} color={everyone ? '#fff' : palette.accent} />
-                          <Text style={[styles.groupStreakText, everyone && styles.groupTextOnAccent]}>
-                            {streak}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-
-                    <Text style={[styles.groupParticipationText, everyone && styles.groupTextOnAccent]}>
-                      {everyone
-                        ? `Everyone completed ${habit} today 🎉`
-                        : `${doneCount} of ${groupSize} completed ${habit} today`}
-                    </Text>
-
-                    <View style={styles.dotsRow}>
-                      {Array.from({ length: groupSize }).map((_, i) => (
-                        <View
-                          key={i}
-                          style={[
-                            styles.dot,
-                            {
-                              backgroundColor:
-                                i < doneCount ? (everyone ? '#fff' : palette.accent) : 'transparent',
-                              borderColor: everyone ? 'rgba(255,255,255,0.6)' : palette.accent,
-                            },
-                          ]}
-                        />
-                      ))}
-                    </View>
-                  </View>
-                );
-              })}
-            </View>
-          </View>
-        )}
       </ScrollView>
     </View>
   );
@@ -291,11 +271,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   habitCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     borderRadius: 18,
     paddingVertical: 16,
     paddingHorizontal: 16,
+  },
+  habitCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   habitIconBadge: {
     width: 36,
@@ -311,6 +293,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.textPrimary,
   },
+  textOnAccent: {
+    color: '#fff',
+  },
+  streakBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    marginRight: 12,
+  },
+  streakText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
   checkCircle: {
     width: 28,
     height: 28,
@@ -319,58 +315,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  error: {
-    color: '#E0567C',
-    marginTop: 16,
-    textAlign: 'center',
-  },
-  groupSection: {
-    marginTop: 32,
-  },
-  groupList: {
-    gap: 12,
-  },
-  groupCard: {
-    borderRadius: 18,
-    padding: 16,
-  },
-  groupCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  groupHabitLabel: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  groupTextOnAccent: {
-    color: '#fff',
-  },
-  groupStreakBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  groupStreakText: {
+  participationText: {
     fontSize: 13,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  groupParticipationText: {
-    fontSize: 14,
-    color: colors.textPrimary,
-    marginBottom: 12,
+    color: colors.textSecondary,
+    marginTop: 12,
   },
   dotsRow: {
     flexDirection: 'row',
     gap: 8,
+    marginTop: 8,
   },
   dot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     borderWidth: 1.5,
+  },
+  error: {
+    color: '#E0567C',
+    marginTop: 16,
+    textAlign: 'center',
   },
 });

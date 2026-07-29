@@ -1,19 +1,20 @@
-// Fill these in after following the setup steps in README.md
+// Fill this in with the config object from your Firebase project.
+// Firebase console > Project settings > General > Your apps > Web app > SDK setup and configuration
+export const FIREBASE_CONFIG = {
+  apiKey: 'YOUR_API_KEY',
+  authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
+  projectId: 'YOUR_PROJECT_ID',
+  storageBucket: 'YOUR_PROJECT_ID.appspot.com',
+  messagingSenderId: 'YOUR_SENDER_ID',
+  appId: 'YOUR_APP_ID',
+};
 
-// OAuth 2.0 "Web application" client ID from Google Cloud Console.
-export const GOOGLE_WEB_CLIENT_ID = 'YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com';
-
-// The /exec URL you get after deploying the Apps Script as a Web App.
-export const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-
-// Any random string. Must match the SHARED_SECRET set in the Apps Script's
-// Script Properties. Stops random people from writing to your sheet if they
-// ever guess the Apps Script URL.
-export const SHARED_SECRET = 'change-me-to-something-random';
-
-// Only these emails are allowed to sign in. Leave empty to allow anyone with
-// a Google account (not recommended).
-export const ALLOWED_EMAILS: string[] = [
-  // 'friend1@gmail.com',
-  // 'friend2@gmail.com',
+// The fixed list of friends. Whoever opens the app picks their name from
+// this list — there's no login, so keep this to people you trust.
+export const FRIEND_NAMES: string[] = [
+  'Friend 1',
+  'Friend 2',
+  'Friend 3',
+  'Friend 4',
+  'Friend 5',
 ];

@@ -3,7 +3,6 @@
     "name": "Bonyan",
     "slug": "Bonyan",
     "version": "1.0.0",
-    "scheme": "bonyan",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

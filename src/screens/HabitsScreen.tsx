@@ -7,11 +7,10 @@ import {
   View,
 } from 'react-native';
 import { HABITS } from '../habits';
-import { fetchHabits, saveHabits, todayISODate, HabitState } from '../api';
-import { AppUser } from '../useGoogleAuth';
+import { fetchHabits, saveHabits, todayISODate, HabitState } from '../firestore';
 
 type Props = {
-  user: AppUser;
+  user: string;
   onSignOut: () => void;
 };
 
@@ -23,11 +22,11 @@ export default function HabitsScreen({ user, onSignOut }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchHabits(user.email, date)
+    fetchHabits(user, date)
       .then(setHabits)
       .catch(() => setError('Could not load today’s habits.'))
       .finally(() => setLoading(false));
-  }, [user.email, date]);
+  }, [user, date]);
 
   const toggleHabit = async (habit: string) => {
     const next = { ...habits, [habit]: !habits[habit] };
@@ -35,7 +34,7 @@ export default function HabitsScreen({ user, onSignOut }: Props) {
     setSavingHabit(habit);
     setError(null);
     try {
-      await saveHabits(user.email, date, next);
+      await saveHabits(user, date, next);
     } catch {
       setHabits(habits);
       setError('Could not save. Check your connection and try again.');
@@ -52,10 +51,10 @@ export default function HabitsScreen({ user, onSignOut }: Props) {
           <Text style={styles.date}>{date}</Text>
         </View>
         <Pressable onPress={onSignOut}>
-          <Text style={styles.signOut}>Sign out</Text>
+          <Text style={styles.signOut}>Not you?</Text>
         </Pressable>
       </View>
-      <Text style={styles.userLabel}>{user.name}</Text>
+      <Text style={styles.userLabel}>{user}</Text>
 
       {loading ? (
         <ActivityIndicator style={styles.loading} />

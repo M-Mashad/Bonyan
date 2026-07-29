@@ -1,11 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { useIdentity } from './src/useIdentity';
-import NamePickerScreen from './src/screens/NamePickerScreen';
+import { useAuth } from './src/useAuth';
+import LoginScreen from './src/screens/LoginScreen';
 import HabitsScreen from './src/screens/HabitsScreen';
 
 export default function App() {
-  const { name, ready, chooseName, clearName } = useIdentity();
+  const { user, ready, signIn, signOut, signingIn, error } = useAuth();
 
   if (!ready) {
     return (
@@ -18,10 +18,10 @@ export default function App() {
 
   return (
     <>
-      {name ? (
-        <HabitsScreen user={name} onSignOut={clearName} />
+      {user ? (
+        <HabitsScreen user={user} onSignOut={signOut} />
       ) : (
-        <NamePickerScreen onPick={chooseName} />
+        <LoginScreen onSignIn={signIn} signingIn={signingIn} error={error} />
       )}
       <StatusBar style="auto" />
     </>

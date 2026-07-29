@@ -9,12 +9,13 @@ export const FIREBASE_CONFIG = {
   appId: 'YOUR_APP_ID',
 };
 
-// The fixed list of friends. Whoever opens the app picks their name from
-// this list — there's no login, so keep this to people you trust.
-export const FRIEND_NAMES: string[] = [
-  'Friend 1',
-  'Friend 2',
-  'Friend 3',
-  'Friend 4',
-  'Friend 5',
+// The fixed list of friends. Each one needs a matching account created in
+// Firebase console > Authentication > Users (email + a password you set).
+// The email doesn't need to be real/reachable — it's just a login handle.
+export const FRIEND_ACCOUNTS: { name: string; email: string }[] = [
+  { name: 'Friend 1', email: 'friend1@bonyan.app' },
+  { name: 'Friend 2', email: 'friend2@bonyan.app' },
+  { name: 'Friend 3', email: 'friend3@bonyan.app' },
+  { name: 'Friend 4', email: 'friend4@bonyan.app' },
+  { name: 'Friend 5', email: 'friend5@bonyan.app' },
 ];

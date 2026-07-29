@@ -1,20 +1,22 @@
 # Bonyan — Habit Tracker
 
 A tiny Expo app for a fixed group of friends to check off daily habits.
-Everyone picks their name from a fixed list (no login) and checks/unchecks
-habits for today. Everything is stored in Firebase (Firestore), with
-real-time sync — a check on one phone shows up for everyone else instantly.
+Each person signs in with a password-protected account and checks/unchecks
+habits for today. Everything is stored in Firebase (Firestore) — each
+person can only read and write their own data, no one else's.
 
 ## How it works
 
 - The app shows a fixed list of habits (edit `src/habits.ts`).
-- On first open, you pick your name from a fixed list (edit `src/config.ts`)
-  — it's remembered on the device after that, no login needed.
-- Checking/unchecking a habit writes straight to Firestore, in a document
-  keyed by date + name, with a field per habit.
-- To see everyone's data, open the Firebase console's Firestore data
-  viewer in your phone's browser — it shows a live table of every
-  `date_name` document.
+- On first open, you tap your name, enter your password, and you're signed
+  in from then on (Firebase remembers the session on the device).
+- Checking/unchecking a habit writes straight to Firestore, under
+  `users/<your account>/habitLogs/<date>`.
+- Firestore security rules only let an account read/write documents under
+  its own `users/<uid>` — one friend can never see or edit another's data
+  through the app. You (the project owner) can still see everyone's data
+  in the Firebase console, since console access isn't subject to those
+  rules.
 
 ## Setup (all from your phone, no code)
 
@@ -36,8 +38,8 @@ real-time sync — a check on one phone shows up for everyone else instantly.
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
-       match /habitLogs/{docId} {
-         allow read, write: if request.auth != null;
+       match /users/{uid}/habitLogs/{date} {
+         allow read, write: if request.auth != null && request.auth.uid == uid;
        }
      }
    }
@@ -45,17 +47,22 @@ real-time sync — a check on one phone shows up for everyone else instantly.
 
    Tap **Publish**.
 
-### 3. Enable anonymous sign-in
+### 3. Enable email/password sign-in
 
 1. In the left menu, tap **Build > Authentication**.
 2. Tap **Get started**, then in the **Sign-in method** tab, enable
-   **Anonymous**.
+   **Email/Password**.
 
-   The app signs everyone in anonymously in the background — this is just
-   what lets the security rule above tell "the app" apart from a random
-   stranger. There's no visible login step for your friends.
+### 4. Create one account per friend
 
-### 4. Register a Web app to get your config
+1. Still in **Authentication**, go to the **Users** tab.
+2. Tap **Add user** once per friend. For the email, it doesn't need to be
+   real — something like `alice@bonyan.app` is fine, it's just a login
+   handle. Pick a password for each (tell each friend theirs).
+3. Make sure the emails you use here exactly match `FRIEND_ACCOUNTS` in
+   `src/config.ts` (see step 6).
+
+### 5. Register a Web app to get your config
 
 1. In the left menu, tap the gear icon > **Project settings**.
 2. Under **Your apps**, tap the **`</>`** (Web) icon.
@@ -78,9 +85,10 @@ real-time sync — a check on one phone shows up for everyone else instantly.
    `src/config.ts` for you — or paste it into `FIREBASE_CONFIG` in
    `src/config.ts` yourself if you're doing this part.
 
-### 5. Set the friend list and habits
+### 6. Set the friend list and habits
 
-- `src/config.ts` — replace `FRIEND_NAMES` with your actual 5 names.
+- `src/config.ts` — replace `FRIEND_ACCOUNTS` with your friends' names and
+  the exact emails you used in step 4.
 - `src/habits.ts` — replace `HABITS` with your actual habit list.
 
 ## Running the app
@@ -95,17 +103,18 @@ your phone — no build step needed.
 
 ## Viewing the data
 
-Firebase console > **Firestore Database** > **Data** tab. Each document is
-named `<date>_<name>` (e.g. `2026-07-29_Alice`) and has a `habits` map
-field with `true`/`false` per habit. This works fine from your phone's
-browser.
+Firebase console > **Firestore Database** > **Data** tab > `users`
+collection. Each friend has a document named after their account's uid,
+containing a `habitLogs` subcollection with one document per date and a
+`habits` map field of `true`/`false` per habit. This works fine from your
+phone's browser, and as the project owner you can see all of it even
+though the app itself can't.
 
 ## Security notes
 
-- Anyone who opens the app can pick any name from the list and check things
-  off as that person — there's no real per-person authentication. Fine for
-  a small group of trusted friends; don't use this pattern for anything
-  sensitive.
-- The Firestore rule allows any anonymously-authenticated client to read
-  and write all `habitLogs` documents. That's intentionally permissive to
-  keep setup simple — don't put anything private in this database.
+- Each friend needs their password to sign in and check things off as
+  themselves — no one can act as someone else through the app.
+- Firestore rules restrict every account to its own `users/<uid>` subtree,
+  so the app can never read or write another account's data.
+- There's no self-serve "forgot password" flow. If someone forgets theirs,
+  reset it for them in Firebase console > Authentication > Users.

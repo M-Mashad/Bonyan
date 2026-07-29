@@ -11,20 +11,16 @@ export function todayISODate(): string {
   return `${year}-${month}-${day}`;
 }
 
-function docId(date: string, user: string): string {
-  return `${date}_${user}`;
-}
-
-export async function fetchHabits(user: string, date: string): Promise<HabitState> {
-  const snap = await getDoc(doc(db, 'habitLogs', docId(date, user)));
+export async function fetchHabits(uid: string, date: string): Promise<HabitState> {
+  const snap = await getDoc(doc(db, 'users', uid, 'habitLogs', date));
   if (!snap.exists()) return {};
   return (snap.data().habits as HabitState) ?? {};
 }
 
-export async function saveHabits(user: string, date: string, habits: HabitState): Promise<void> {
+export async function saveHabits(uid: string, date: string, habits: HabitState): Promise<void> {
   await setDoc(
-    doc(db, 'habitLogs', docId(date, user)),
-    { date, user, habits, updatedAt: serverTimestamp() },
+    doc(db, 'users', uid, 'habitLogs', date),
+    { date, habits, updatedAt: serverTimestamp() },
     { merge: true }
   );
 }

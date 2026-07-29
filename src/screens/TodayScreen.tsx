@@ -10,10 +10,21 @@ import {
 import { User } from 'firebase/auth';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { HABITS } from '../habits';
-import { FRIEND_ACCOUNTS } from '../config';
-import { fetchHabits, saveHabits, HabitState } from '../firestore';
-import { lastNDays, weekdayShort, dayNumber, isToday, todayISODate } from '../dateUtils';
+import { FRIEND_ACCOUNTS, GROUP_LABELS } from '../config';
+import { fetchHabits, saveHabits, fetchGroupHabitLogs, HabitState } from '../firestore';
+import { computeGroupStreak, buildActivityFeed, ActivityItem } from '../group';
+import {
+  lastNDays,
+  weekdayShort,
+  dayNumber,
+  isToday,
+  todayISODate,
+  formatRelativeTime,
+} from '../dateUtils';
 import { colors, colorForHabit, iconForHabit } from '../theme';
+
+const GROUP_HISTORY_DAYS = 60;
+const ACTIVITY_FEED_LIMIT = 10;
 
 type Props = {
   user: User;
@@ -26,6 +37,9 @@ export default function TodayScreen({ user }: Props) {
   const [savingHabit, setSavingHabit] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const [groupStreak, setGroupStreak] = useState<number | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+
   const displayName = FRIEND_ACCOUNTS.find((a) => a.email === user.email)?.name ?? user.email ?? '';
   const days = lastNDays(7);
 
@@ -36,6 +50,19 @@ export default function TodayScreen({ user }: Props) {
       .catch(() => setError('Could not load habits for this day.'))
       .finally(() => setLoading(false));
   }, [user.uid, selectedDate]);
+
+  useEffect(() => {
+    fetchGroupHabitLogs(GROUP_HISTORY_DAYS)
+      .then((entries) => {
+        setGroupStreak(computeGroupStreak(entries, GROUP_HISTORY_DAYS));
+        setActivity(buildActivityFeed(entries, ACTIVITY_FEED_LIMIT));
+      })
+      .catch(() => {
+        // Non-critical — the group banner/feed just stays hidden.
+      });
+  }, [selectedDate]);
+
+  const labelFor = (uid: string) => (uid === user.uid ? 'You' : GROUP_LABELS[uid] ?? 'A friend');
 
   const toggleHabit = async (habit: string) => {
     const next = { ...habits, [habit]: !habits[habit] };
@@ -59,6 +86,20 @@ export default function TodayScreen({ user }: Props) {
           <Text style={styles.greeting}>Hi, {displayName}</Text>
           <Text style={styles.subGreeting}>Let's build some habits today</Text>
         </View>
+
+        {groupStreak !== null && (
+          <View style={styles.groupStreakCard}>
+            <View style={styles.groupStreakIcon}>
+              <Ionicons name="flame" size={22} color="#fff" />
+            </View>
+            <View style={styles.groupStreakTextWrap}>
+              <Text style={styles.groupStreakValue}>
+                {groupStreak} {groupStreak === 1 ? 'day' : 'days'}
+              </Text>
+              <Text style={styles.groupStreakLabel}>Group streak</Text>
+            </View>
+          </View>
+        )}
 
         <View style={styles.dayStrip}>
           {days.map((date) => {
@@ -121,6 +162,28 @@ export default function TodayScreen({ user }: Props) {
         )}
 
         {error && <Text style={styles.error}>{error}</Text>}
+
+        {activity.length > 0 && (
+          <View style={styles.activitySection}>
+            <Text style={styles.sectionTitle}>Group activity</Text>
+            <View style={styles.activityList}>
+              {activity.map((item, i) => {
+                const palette = colorForHabit(item.habit, HABITS);
+                return (
+                  <View key={i} style={styles.activityRow}>
+                    <View style={[styles.activityIconBadge, { backgroundColor: palette.bg }]}>
+                      <Ionicons name={iconForHabit(item.habit) as any} size={16} color={palette.accent} />
+                    </View>
+                    <Text style={styles.activityText}>
+                      <Text style={styles.activityLabel}>{labelFor(item.uid)}</Text> completed {item.habit}
+                    </Text>
+                    <Text style={styles.activityTime}>{formatRelativeTime(item.updatedAt)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -154,6 +217,36 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     marginTop: 4,
+  },
+  groupStreakCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 20,
+  },
+  groupStreakIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  groupStreakTextWrap: {
+    flex: 1,
+  },
+  groupStreakValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  groupStreakLabel: {
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 1,
   },
   dayStrip: {
     flexDirection: 'row',
@@ -238,5 +331,37 @@ const styles = StyleSheet.create({
     color: '#E0567C',
     marginTop: 16,
     textAlign: 'center',
+  },
+  activitySection: {
+    marginTop: 32,
+  },
+  activityList: {
+    gap: 2,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  activityIconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  activityText: {
+    flex: 1,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  activityLabel: {
+    fontWeight: '700',
+  },
+  activityTime: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginLeft: 8,
   },
 });

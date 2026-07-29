@@ -1,9 +1,15 @@
-# Bonyan — Habit Tracker
+# Bonyan
 
-A tiny Expo app for a fixed group of friends to check off daily habits.
-Each person signs in with a password-protected account and checks/unchecks
-habits for today. Everything is stored in Firebase (Firestore) — each
-person can only read and write their own data, no one else's.
+A tiny Expo app for a fixed group of friends to build Islamic habits
+together — Fajr, Qiyam, and whatever else you add. Each person signs in
+with a password-protected account and checks off habits for the day.
+Individual check-ins stay private (no one can read or write another
+account's day-by-day log), but the group as a whole sees a shared **group
+streak** and an anonymized **activity feed** ("Brother 2 completed Fajr")
+— enough to feel like a team effort without turning it into a leaderboard
+of names. The point is the deed, not who did it.
+
+Live at: **https://m-mashad.github.io/Bonyan/**
 
 ## How it works
 
@@ -12,11 +18,13 @@ person can only read and write their own data, no one else's.
   in from then on (Firebase remembers the session on the device).
 - Checking/unchecking a habit writes straight to Firestore, under
   `users/<your account>/habitLogs/<date>`.
-- Firestore security rules only let an account read/write documents under
-  its own `users/<uid>` — one friend can never see or edit another's data
-  through the app. You (the project owner) can still see everyone's data
-  in the Firebase console, since console access isn't subject to those
-  rules.
+- Firestore security rules let any signed-in member **read** everyone's
+  check-ins (needed to compute the group streak and activity feed), but
+  **write** only your own — no one can fake someone else's check-in.
+- Real names are never shown for anyone but yourself. Group-facing views
+  (the streak banner, the activity feed) label other members generically
+  ("Brother 1", "Brother 2", ...) via `GROUP_LABELS` in `src/config.ts` —
+  never cross-referenced to a name anywhere in the UI.
 
 ## Setup (all from your phone, no code)
 
@@ -39,7 +47,8 @@ person can only read and write their own data, no one else's.
    service cloud.firestore {
      match /databases/{database}/documents {
        match /users/{uid}/habitLogs/{date} {
-         allow read, write: if request.auth != null && request.auth.uid == uid;
+         allow read: if request.auth != null;
+         allow write: if request.auth != null && request.auth.uid == uid;
        }
      }
    }
@@ -58,9 +67,11 @@ person can only read and write their own data, no one else's.
 1. Still in **Authentication**, go to the **Users** tab.
 2. Tap **Add user** once per friend. For the email, it doesn't need to be
    real — something like `alice@bonyan.app` is fine, it's just a login
-   handle. Pick a password for each (tell each friend theirs).
+   handle. Pick a password for each (tell each friend theirs, or use the
+   Profile tab's "Change password" once signed in).
 3. Make sure the emails you use here exactly match `FRIEND_ACCOUNTS` in
-   `src/config.ts` (see step 6).
+   `src/config.ts` (see step 6), and note each account's **User UID**
+   (shown in the Users table) — you'll need those for `GROUP_LABELS`.
 
 ### 5. Register a Web app to get your config
 
@@ -68,27 +79,13 @@ person can only read and write their own data, no one else's.
 2. Under **Your apps**, tap the **`</>`** (Web) icon.
 3. Give it a nickname (e.g. "Bonyan app"), skip Firebase Hosting, and
    register it.
-4. You'll see a `firebaseConfig` object like:
+4. You'll see a `firebaseConfig` object — send it to me (or paste it into
+   `FIREBASE_CONFIG` in `src/config.ts` yourself).
 
-   ```js
-   const firebaseConfig = {
-     apiKey: "...",
-     authDomain: "...",
-     projectId: "...",
-     storageBucket: "...",
-     messagingSenderId: "...",
-     appId: "...",
-   };
-   ```
+### 6. Set the friend list, group labels, and habits
 
-   Send me that object (paste it in chat) and I'll drop it into
-   `src/config.ts` for you — or paste it into `FIREBASE_CONFIG` in
-   `src/config.ts` yourself if you're doing this part.
-
-### 6. Set the friend list and habits
-
-- `src/config.ts` — replace `FRIEND_ACCOUNTS` with your friends' names and
-  the exact emails you used in step 4.
+- `src/config.ts` — `FRIEND_ACCOUNTS` (names + emails), `GROUP_LABELS`
+  (each account's UID mapped to an anonymous label like "Brother 3").
 - `src/habits.ts` — replace `HABITS` with your actual habit list.
 
 ## Running the app
@@ -99,7 +96,9 @@ npx expo start
 ```
 
 Scan the QR code with the **Expo Go** app (free, iOS/Android) to run it on
-your phone — no build step needed.
+your phone — no build step needed. To publish an update to the live site,
+export a web build (`npx expo export --platform web`) and deploy the
+`dist/` folder to the `gh-pages` branch.
 
 ## Viewing the data
 
@@ -107,14 +106,17 @@ Firebase console > **Firestore Database** > **Data** tab > `users`
 collection. Each friend has a document named after their account's uid,
 containing a `habitLogs` subcollection with one document per date and a
 `habits` map field of `true`/`false` per habit. This works fine from your
-phone's browser, and as the project owner you can see all of it even
-though the app itself can't.
+phone's browser.
 
 ## Security notes
 
 - Each friend needs their password to sign in and check things off as
   themselves — no one can act as someone else through the app.
-- Firestore rules restrict every account to its own `users/<uid>` subtree,
-  so the app can never read or write another account's data.
-- There's no self-serve "forgot password" flow. If someone forgets theirs,
-  reset it for them in Firebase console > Authentication > Users.
+- Firestore write rules restrict every account to its own `users/<uid>`
+  subtree. Read access is shared across signed-in members (needed for the
+  group streak/activity feed) — the app itself never displays another
+  member's real name, but the raw data is technically readable by any
+  signed-in account, same trust level as everything else in this project.
+- There's no self-serve "forgot password" flow if the Profile tab isn't
+  reachable. Reset it for them in Firebase console > Authentication >
+  Users if needed.

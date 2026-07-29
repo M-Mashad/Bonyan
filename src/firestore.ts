@@ -1,4 +1,15 @@
-import { collection, doc, getDoc, getDocs, query, setDoc, serverTimestamp, where } from 'firebase/firestore';
+import {
+  collection,
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  serverTimestamp,
+  where,
+  Timestamp,
+} from 'firebase/firestore';
 import { db } from './firebase';
 import { addDays, todayISODate } from './dateUtils';
 
@@ -33,4 +44,24 @@ export async function fetchRecentHabitLogs(uid: string, days: number): Promise<R
     result[data.date as string] = (data.habits as HabitState) ?? {};
   });
   return result;
+}
+
+export type GroupLogEntry = { uid: string; date: string; habits: HabitState; updatedAt: Date | null };
+
+// Every account's logs for the last `days` days — needed for the group streak
+// and encouragement feed. Requires Firestore rules that allow any signed-in
+// member to *read* habitLogs across accounts (writes stay owner-only).
+export async function fetchGroupHabitLogs(days: number): Promise<GroupLogEntry[]> {
+  const startDate = addDays(todayISODate(), -days);
+  const q = query(collectionGroup(db, 'habitLogs'), where('date', '>=', startDate));
+  const snap = await getDocs(q);
+
+  const results: GroupLogEntry[] = [];
+  snap.forEach((docSnap) => {
+    const uid = docSnap.ref.parent.parent?.id ?? '';
+    const data = docSnap.data();
+    const updatedAt = data.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : null;
+    results.push({ uid, date: data.date, habits: (data.habits as HabitState) ?? {}, updatedAt });
+  });
+  return results;
 }

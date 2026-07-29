@@ -1,0 +1,255 @@
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
+import { User } from 'firebase/auth';
+import { HABITS } from '../habits';
+import { FRIEND_ACCOUNTS } from '../config';
+import { fetchHabits, saveHabits, HabitState } from '../firestore';
+import { lastNDays, weekdayShort, dayNumber, isToday, todayISODate } from '../dateUtils';
+import { colors, colorForHabit, emojiForHabit } from '../theme';
+
+type Props = {
+  user: User;
+  onSignOut: () => void;
+};
+
+export default function TodayScreen({ user, onSignOut }: Props) {
+  const [selectedDate, setSelectedDate] = useState(todayISODate());
+  const [habits, setHabits] = useState<HabitState>({});
+  const [loading, setLoading] = useState(true);
+  const [savingHabit, setSavingHabit] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const displayName = FRIEND_ACCOUNTS.find((a) => a.email === user.email)?.name ?? user.email ?? '';
+  const days = lastNDays(7);
+
+  useEffect(() => {
+    setLoading(true);
+    fetchHabits(user.uid, selectedDate)
+      .then(setHabits)
+      .catch(() => setError('Could not load habits for this day.'))
+      .finally(() => setLoading(false));
+  }, [user.uid, selectedDate]);
+
+  const toggleHabit = async (habit: string) => {
+    const next = { ...habits, [habit]: !habits[habit] };
+    setHabits(next);
+    setSavingHabit(habit);
+    setError(null);
+    try {
+      await saveHabits(user.uid, selectedDate, next);
+    } catch {
+      setHabits(habits);
+      setError('Could not save. Check your connection and try again.');
+    } finally {
+      setSavingHabit(null);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View>
+            <Text style={styles.greeting}>Hi, {displayName} 👋</Text>
+            <Text style={styles.subGreeting}>Let's build some habits today</Text>
+          </View>
+          <Pressable onPress={onSignOut} hitSlop={12}>
+            <Text style={styles.signOut}>Sign out</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.dayStrip}>
+          {days.map((date) => {
+            const selected = date === selectedDate;
+            return (
+              <Pressable
+                key={date}
+                style={[styles.dayPill, selected && styles.dayPillSelected]}
+                onPress={() => setSelectedDate(date)}
+              >
+                <Text style={[styles.dayLetter, selected && styles.dayTextSelected]}>
+                  {weekdayShort(date).charAt(0)}
+                </Text>
+                <Text style={[styles.dayNumber, selected && styles.dayTextSelected]}>
+                  {dayNumber(date)}
+                </Text>
+                {isToday(date) && !selected && <View style={styles.todayDot} />}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <Text style={styles.sectionTitle}>{isToday(selectedDate) ? 'Today' : formatLongDate(selectedDate)}</Text>
+
+        {loading ? (
+          <ActivityIndicator style={styles.loading} color={colors.primary} />
+        ) : (
+          <View style={styles.list}>
+            {HABITS.map((habit) => {
+              const checked = !!habits[habit];
+              const palette = colorForHabit(habit, HABITS);
+              return (
+                <Pressable
+                  key={habit}
+                  style={[styles.habitCard, { backgroundColor: palette.bg }]}
+                  onPress={() => toggleHabit(habit)}
+                  disabled={savingHabit === habit}
+                >
+                  <Text style={styles.habitEmoji}>{emojiForHabit(habit)}</Text>
+                  <Text style={styles.habitLabel}>{habit}</Text>
+                  {savingHabit === habit ? (
+                    <ActivityIndicator size="small" color={palette.accent} />
+                  ) : (
+                    <View
+                      style={[
+                        styles.checkCircle,
+                        { borderColor: palette.accent },
+                        checked && { backgroundColor: palette.accent },
+                      ]}
+                    >
+                      {checked && <Text style={styles.checkmark}>✓</Text>}
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        )}
+
+        {error && <Text style={styles.error}>{error}</Text>}
+      </ScrollView>
+    </View>
+  );
+}
+
+function formatLongDate(dateStr: string): string {
+  const [, month, day] = dateStr.split('-').map(Number);
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${monthNames[month - 1]} ${day}`;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  scrollContent: {
+    paddingTop: 64,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 24,
+  },
+  greeting: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: colors.textPrimary,
+  },
+  subGreeting: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
+  signOut: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  dayStrip: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 24,
+  },
+  dayPill: {
+    width: 40,
+    height: 60,
+    borderRadius: 14,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  dayPillSelected: {
+    backgroundColor: colors.primary,
+  },
+  dayLetter: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '600',
+  },
+  dayNumber: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    fontWeight: '700',
+  },
+  dayTextSelected: {
+    color: '#fff',
+  },
+  todayDot: {
+    position: 'absolute',
+    bottom: 6,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: 14,
+  },
+  loading: {
+    marginTop: 40,
+  },
+  list: {
+    gap: 12,
+  },
+  habitCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 18,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+  },
+  habitEmoji: {
+    fontSize: 22,
+    marginRight: 12,
+  },
+  habitLabel: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  checkCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  error: {
+    color: '#E0567C',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+});

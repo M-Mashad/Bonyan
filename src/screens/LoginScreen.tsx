@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { FRIEND_ACCOUNTS } from '../config';
+import { colors } from '../theme';
 
 type Props = {
   onSignIn: (email: string, password: string) => void;
@@ -22,13 +23,24 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
   if (!selected) {
     return (
       <View style={styles.container}>
+        <View style={styles.hero}>
+          <Text style={styles.heroEmoji}>🌱</Text>
+        </View>
         <Text style={styles.title}>Habit Tracker</Text>
-        <Text style={styles.subtitle}>Who's checking in?</Text>
+        <Text style={styles.subtitle}>Who's checking in today?</Text>
 
         <View style={styles.list}>
           {FRIEND_ACCOUNTS.map((account) => (
-            <Pressable key={account.email} style={styles.button} onPress={() => setSelected(account)}>
-              <Text style={styles.buttonText}>{account.name}</Text>
+            <Pressable
+              key={account.email}
+              style={({ pressed }) => [styles.nameCard, pressed && styles.nameCardPressed]}
+              onPress={() => setSelected(account)}
+            >
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{account.name.charAt(0)}</Text>
+              </View>
+              <Text style={styles.nameText}>{account.name}</Text>
+              <Text style={styles.chevron}>›</Text>
             </Pressable>
           ))}
         </View>
@@ -38,8 +50,11 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
 
   return (
     <View style={styles.container}>
+      <View style={styles.hero}>
+        <Text style={styles.heroEmoji}>👋</Text>
+      </View>
       <Text style={styles.title}>Hi, {selected.name}</Text>
-      <Text style={styles.subtitle}>Enter your password</Text>
+      <Text style={styles.subtitle}>Enter your password to continue</Text>
 
       <TextInput
         style={styles.input}
@@ -48,15 +63,19 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
         secureTextEntry
         autoFocus
         placeholder="Password"
+        placeholderTextColor={colors.textSecondary}
         onSubmitEditing={() => onSignIn(selected.email, password)}
       />
 
       <Pressable
-        style={[styles.button, styles.signInButton, signingIn && styles.buttonDisabled]}
+        style={({ pressed }) => [
+          styles.button,
+          (signingIn || pressed) && styles.buttonPressed,
+        ]}
         onPress={() => onSignIn(selected.email, password)}
         disabled={signingIn}
       >
-        {signingIn ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign in</Text>}
+        {signingIn ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Let's go</Text>}
       </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -76,60 +95,114 @@ export default function LoginScreen({ onSignIn, signingIn, error }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
+  hero: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    backgroundColor: '#EAE7FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  heroEmoji: {
+    fontSize: 44,
+  },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 8,
+    fontSize: 26,
+    fontWeight: '800',
+    color: colors.textPrimary,
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: 15,
+    color: colors.textSecondary,
     marginBottom: 32,
   },
   list: {
     width: '100%',
     gap: 12,
   },
-  button: {
-    backgroundColor: '#4285F4',
-    paddingVertical: 14,
-    borderRadius: 8,
+  nameCard: {
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    shadowColor: '#25293C',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
+  },
+  nameCardPressed: {
+    opacity: 0.7,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  avatarText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+  nameText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.textPrimary,
+  },
+  chevron: {
+    fontSize: 22,
+    color: colors.textSecondary,
+  },
+  input: {
     width: '100%',
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    color: colors.textPrimary,
   },
-  signInButton: {
-    marginTop: 16,
+  button: {
+    width: '100%',
+    backgroundColor: colors.primary,
+    paddingVertical: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginTop: 14,
   },
-  buttonDisabled: {
-    opacity: 0.5,
+  buttonPressed: {
+    opacity: 0.85,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  input: {
-    width: '100%',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    fontSize: 16,
+    fontWeight: '700',
   },
   error: {
-    color: '#c0392b',
+    color: '#E0567C',
     marginTop: 16,
     textAlign: 'center',
   },
   back: {
-    color: '#4285F4',
-    marginTop: 24,
+    color: colors.primary,
+    marginTop: 22,
     fontSize: 14,
+    fontWeight: '600',
   },
 });
